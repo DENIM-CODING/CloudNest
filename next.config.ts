@@ -25,6 +25,7 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "cloud.appwrite.io",
+        pathname: "/v1/storage/buckets/**", //change which i did
       },
     ],
   },

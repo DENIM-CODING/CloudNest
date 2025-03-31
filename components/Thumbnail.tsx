@@ -26,6 +26,7 @@ export const Thumbnail = ({
         alt="thumbnail"
         width={100}
         height={100}
+        unoptimized //change which i did
         className={cn(
           "size-8 object-contain",
           imageClassName,
