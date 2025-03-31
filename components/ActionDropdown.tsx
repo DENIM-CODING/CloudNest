@@ -27,6 +27,8 @@ import { actionsDropdownItems } from '@/constants';
 import Link from 'next/link';
 import { constructDownloadUrl } from '@/lib/utils';
 import { Button } from "@/components/ui/button";
+import { renameFile } from '@/lib/actions/file.actions';
+import { usePathname } from "next/navigation";
   
 const ActionDropdown = ({file} : {file:Models.Document}) => {
     const [isModalOpen , setIsModalOpen] = useState(false);
@@ -34,6 +36,7 @@ const ActionDropdown = ({file} : {file:Models.Document}) => {
     const [action,setAction] = useState<ActionType | null>(null);
     const [name, setName] = useState(file.name);
     const [isLoading, setIsLoading] = useState(false);
+    const path = usePathname();
 
     const closeAllModals = () => {
         setIsModalOpen(false);
@@ -44,23 +47,22 @@ const ActionDropdown = ({file} : {file:Models.Document}) => {
       };
 
       const handleAction = async () => {
-        // if (!action) return;
-        // setIsLoading(true);
-        // let success = false;
+        if (!action) return;
+        setIsLoading(true);
+        let success = false;
     
-        // const actions = {
-        //   rename: () =>
-        //     renameFile({ fileId: file.$id, name, extension: file.extension, path }),
-        //   share: () => updateFileUsers({ fileId: file.$id, emails, path }),
-        //   delete: () =>
-        //     deleteFile({ fileId: file.$id, bucketFileId: file.bucketFileId, path }),
-        // };
+        const actions = {
+          rename: () =>
+            renameFile({ fileId: file.$id, name, extension: file.extension, path }),
+          share: () => console.log('share'),
+          delete: () => console.log('share'),
+        };
     
-        // success = await actions[action.value as keyof typeof actions]();
+        success = await actions[action.value as keyof typeof actions](); //one of rename share delete
     
-        // if (success) closeAllModals();
+        if (success) closeAllModals();
     
-        // setIsLoading(false);
+        setIsLoading(false);
       };
 
     const renderDialogContent = () => {
