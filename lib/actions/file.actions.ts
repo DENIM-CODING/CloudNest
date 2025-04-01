@@ -67,7 +67,6 @@ const createQueries = (
   searchText: string,
   sort: string,
   limit?: number,
-
 ) => {
   const queries = [
     Query.or([
@@ -91,7 +90,12 @@ const createQueries = (
   return queries;
 };
 
-export const getFiles = async ({types = [], searchText='', sort='$createdAt-desc', limit} : GetFilesProps) => {
+export const getFiles = async ({
+  types = [],
+  searchText = "",
+  sort = "$createdAt-desc",
+  limit,
+}: GetFilesProps) => {
   const { databases } = await createAdminClient();
 
   try {
@@ -99,7 +103,7 @@ export const getFiles = async ({types = [], searchText='', sort='$createdAt-desc
 
     if (!currentUser) throw new Error("User not found");
 
-    const queries = createQueries(currentUser,types,searchText,sort,limit);
+    const queries = createQueries(currentUser, types, searchText, sort, limit);
 
     const files = await databases.listDocuments(
       appwriteConfig.databaseId,
@@ -140,7 +144,6 @@ export const renameFile = async ({
   }
 };
 
-
 export const updateFileUsers = async ({
   fileId,
   emails,
@@ -161,10 +164,9 @@ export const updateFileUsers = async ({
     revalidatePath(path);
     return parseStringify(updatedFile);
   } catch (error) {
-    handleError(error, "Failed to share file");
+    handleError(error, "Failed to rename file");
   }
 };
-
 
 export const deleteFile = async ({
   fileId,
@@ -190,3 +192,45 @@ export const deleteFile = async ({
     handleError(error, "Failed to rename file");
   }
 };
+
+// ============================== TOTAL FILE SPACE USED
+export async function getTotalSpaceUsed() {
+  try {
+    const { databases } = await createSessionClient();
+    const currentUser = await getCurrentUser();
+    if (!currentUser) throw new Error("User is not authenticated.");
+
+    const files = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.filesCollectionId,
+      [Query.equal("owner", [currentUser.$id])],
+    );
+
+    const totalSpace = {
+      image: { size: 0, latestDate: "" },
+      document: { size: 0, latestDate: "" },
+      video: { size: 0, latestDate: "" },
+      audio: { size: 0, latestDate: "" },
+      other: { size: 0, latestDate: "" },
+      used: 0,
+      all: 2 * 1024 * 1024 * 1024 /* 2GB available bucket storage */,
+    };
+
+    files.documents.forEach((file) => {
+      const fileType = file.type as FileType;
+      totalSpace[fileType].size += file.size;
+      totalSpace.used += file.size;
+
+      if (
+        !totalSpace[fileType].latestDate ||
+        new Date(file.$updatedAt) > new Date(totalSpace[fileType].latestDate)
+      ) {
+        totalSpace[fileType].latestDate = file.$updatedAt;
+      }
+    });
+
+    return parseStringify(totalSpace);
+  } catch (error) {
+    handleError(error, "Error calculating total space used:, ");
+  }
+}
